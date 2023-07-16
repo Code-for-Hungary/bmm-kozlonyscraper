@@ -104,7 +104,7 @@ config = configparser.ConfigParser()
 config.read_file(open('config.ini'))
 logging.basicConfig(
     filename=config['DEFAULT']['logfile_name'], 
-    level=logging.DEBUG, 
+    level=logging.INFO, 
     format='%(asctime)s - %(levelname)s | %(module)s.%(funcName)s line %(lineno)d: %(message)s')
 
 db = Bmm_KozlonyDB(config['DEFAULT']['database_name'])
