@@ -68,7 +68,7 @@ def download_data(year, month):
                         
                         for doc in docs:
                             for token in doc:
-                                if token.pos_ in ['NOUN', 'ADJ', 'PROPN', 'ADP', 'ADV', 'VERB']:
+                                if token.pos_ in ['NOUN', 'ADJ', 'PROPN', 'ADP', 'ADV', 'VERB'] and token.lemma_.isalpha():
                                     lemmas.append(token.lemma_.lower())
 
                     entry['lemmacontent'] = " ".join(lemmas)
