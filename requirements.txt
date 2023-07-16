@@ -1,0 +1,6 @@
+requests
+huspacy
+jinja2
+urllib.parse
+beautifulsoup4
+pdfplumber

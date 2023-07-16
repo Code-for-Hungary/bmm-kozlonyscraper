@@ -1,0 +1,5 @@
+config.ini
+bmm-kozlonyscraper.db
+/.vscode/
+/__pycache__/
+*.log

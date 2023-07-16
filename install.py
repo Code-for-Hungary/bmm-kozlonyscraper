@@ -1,0 +1,3 @@
+import huspacy
+
+huspacy.download()
