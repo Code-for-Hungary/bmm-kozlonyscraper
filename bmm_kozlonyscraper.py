@@ -32,7 +32,7 @@ def download_data(year, month):
         }
 
         page = requests.get(url, params = params, verify = False)
-        print(page.url)
+        logging.info(page.url)
         soupage = BeautifulSoup(page.content, 'html.parser')
 
         entry = {}
@@ -41,7 +41,7 @@ def download_data(year, month):
 
             docurl = journalrow.find('meta', {'itemprop': 'url'})['content']
 
-            print(docurl)
+            logging.info(docurl)
 
             dochash = urlparse(docurl).path.split('/')[-2]
             if db.getDoc(dochash) is None:
@@ -58,6 +58,7 @@ def download_data(year, month):
                 res = requests.get(entry['pdfurl'], verify = False).content
                 with pdfplumber.open(BytesIO(res)) as pdf:
                     texts = []
+                    logging.info(len(pdf.pages))
                     for page in pdf.pages:
                         texts.append(page.extract_text())
                     entry['content'] = "\n".join(texts)
@@ -71,6 +72,7 @@ def download_data(year, month):
                                 if token.pos_ in ['NOUN', 'ADJ', 'PROPN', 'ADP', 'ADV', 'VERB'] and token.lemma_.isalpha():
                                     lemmas.append(token.lemma_.lower())
 
+                    logging.info(len(lemmas))
                     entry['lemmacontent'] = " ".join(lemmas)
 
                     db.saveDoc(dochash, entry)
@@ -126,6 +128,8 @@ if (lastissuedate):
     d = datetime.datetime.strptime(lastissuedate, '%Y-%m-%d')
 else:
     d = datetime.datetime.now()
+
+# TODO: ha d nem az aktualis honap, akkor az aktualis honapra is kell futtatni download_data-t
 
 download_data(year = d.year, month = d.month)
 
