@@ -60,17 +60,17 @@ def download_data(year, month):
                     entry['content'] = ''
                     entry['lemmacontent'] = ''
                     texts = []
-                    pagenum = 0
+                    pdfpagenum = 0
                     for page in pdf.pages:
                         texts.append(page.extract_text())
-                        pagenum = pagenum + 1
-                        if pagenum == 10:
+                        pdfpagenum = pdfpagenum + 1
+                        if pdfpagenum == 10:
                             lemmas = []
                             if config['DEFAULT']['donotlemmatize'] == '0':
                                 lemmas = bmmtools.lemmatize(nlp, texts)
                             entry['lemmacontent'] = entry['lemmacontent'] + " ".join(lemmas)
                             entry['content'] = entry['content'] + "\n".join(texts)
-                            pagenum = 0
+                            pdfpagenum = 0
                             texts = []
 
                     lemmas = []
