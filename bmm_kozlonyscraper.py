@@ -121,7 +121,7 @@ env = Environment(
 )
 contenttpl = env.get_template('content.html')
 
-if config['DEFAULT']['donotlemmatize'] == 0:
+if config['DEFAULT']['donotlemmatize'] == '0':
     nlp = huspacy.load()
 
 lastissuedate = db.getLastIssueDate()
@@ -151,7 +151,7 @@ for event in events['data']:
             
         backend.notifyEvent(event['id'], content)
 
-if config['DEFAULT']['staging'] == 0:
+if config['DEFAULT']['staging'] == '0':
     clearIsNew(foundIds)
 
 db.closeConnection()
