@@ -1,6 +1,7 @@
 import os
 import sqlite3
 
+
 class Bmm_KozlonyDB:
 
     def __init__(self, databasename) -> None:
