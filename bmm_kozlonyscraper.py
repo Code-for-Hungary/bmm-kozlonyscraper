@@ -57,20 +57,27 @@ def download_data(year, month):
 
                 res = requests.get(entry['pdfurl'], verify = False).content
                 with pdfplumber.open(BytesIO(res)) as pdf:
+                    entry['content'] = ''
+                    entry['lemmacontent'] = ''
                     texts = []
+                    pagenum = 0
                     for page in pdf.pages:
                         texts.append(page.extract_text())
-                    entry['content'] = "\n".join(texts)
+                        pagenum = pagenum + 1
+                        if pagenum == 10:
+                            lemmas = []
+                            if config['DEFAULT']['donotlemmatize'] == '0':
+                                lemmas = bmmtools.lemmatize(nlp, texts)
+                            entry['lemmacontent'] = entry['lemmacontent'] + " ".join(lemmas)
+                            entry['content'] = entry['content'] + "\n".join(texts)
+                            pagenum = 0
+                            texts = []
 
                     lemmas = []
                     if config['DEFAULT']['donotlemmatize'] == '0':
-                        docs = list(nlp.pipe(texts))
-                        for doc in docs:
-                            for token in doc:
-                                if token.pos_ in ['NOUN', 'ADJ', 'PROPN', 'ADP', 'ADV', 'VERB'] and token.lemma_.isalpha():
-                                    lemmas.append(token.lemma_.lower())
-
-                    entry['lemmacontent'] = " ".join(lemmas)
+                        lemmas = bmmtools.lemmatize(nlp, texts)
+                    entry['lemmacontent'] = entry['lemmacontent'] + " ".join(lemmas)
+                    entry['content'] = entry['content'] + "\n".join(texts)
 
                     db.saveDoc(dochash, entry)
                     db.commitConnection()
