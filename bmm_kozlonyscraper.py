@@ -58,7 +58,6 @@ def download_data(year, month):
                 res = requests.get(entry['pdfurl'], verify = False).content
                 with pdfplumber.open(BytesIO(res)) as pdf:
                     texts = []
-                    logging.info(len(pdf.pages))
                     for page in pdf.pages:
                         texts.append(page.extract_text())
                     entry['content'] = "\n".join(texts)
@@ -66,14 +65,11 @@ def download_data(year, month):
                     lemmas = []
                     if config['DEFAULT']['donotlemmatize'] == '0':
                         docs = list(nlp.pipe(texts))
-                        logging.info(len(docs))
                         for doc in docs:
-                            logging.info(len(doc))
                             for token in doc:
                                 if token.pos_ in ['NOUN', 'ADJ', 'PROPN', 'ADP', 'ADV', 'VERB'] and token.lemma_.isalpha():
                                     lemmas.append(token.lemma_.lower())
 
-                    logging.info(len(lemmas))
                     entry['lemmacontent'] = " ".join(lemmas)
 
                     db.saveDoc(dochash, entry)
