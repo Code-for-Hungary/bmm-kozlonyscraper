@@ -64,7 +64,7 @@ def download_data(year, month):
                     entry['content'] = "\n".join(texts)
 
                     lemmas = []
-                    if not config['DEFAULT']['donotlemmatize']:
+                    if config['DEFAULT']['donotlemmatize'] == '0':
                         docs = list(nlp.pipe(texts))
                         logging.info(len(docs))
                         for doc in docs:
@@ -121,7 +121,7 @@ env = Environment(
 )
 contenttpl = env.get_template('content.html')
 
-if not config['DEFAULT']['donotlemmatize']:
+if config['DEFAULT']['donotlemmatize'] == 0:
     nlp = huspacy.load()
 
 lastissuedate = db.getLastIssueDate()
@@ -151,7 +151,7 @@ for event in events['data']:
             
         backend.notifyEvent(event['id'], content)
 
-if not config['DEFAULT']['staging']:
+if config['DEFAULT']['staging'] == 0:
     clearIsNew(foundIds)
 
 db.closeConnection()
