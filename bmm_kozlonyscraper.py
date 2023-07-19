@@ -66,8 +66,9 @@ def download_data(year, month):
                     lemmas = []
                     if not config['DEFAULT']['donotlemmatize']:
                         docs = list(nlp.pipe(texts))
-                        
+                        logging.info(len(docs))
                         for doc in docs:
+                            logging.info(len(doc))
                             for token in doc:
                                 if token.pos_ in ['NOUN', 'ADJ', 'PROPN', 'ADP', 'ADV', 'VERB']:
                                     lemmas.append(token.lemma_.lower())
