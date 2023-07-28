@@ -153,7 +153,6 @@ for event in events['data']:
     else:
         result = db.getAllNew()
         for res in result:
-            print(res[0])
             foundIds.append(res[0])
 
     if result:
