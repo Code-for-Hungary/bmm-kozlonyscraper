@@ -3,3 +3,4 @@ huspacy
 jinja2
 beautifulsoup4
 pdfplumber
+packaging

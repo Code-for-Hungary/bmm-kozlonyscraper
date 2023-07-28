@@ -88,3 +88,12 @@ class Bmm_KozlonyDB:
         results = c.fetchall()
         c.close()
         return results
+
+    def getAllNew(self):
+        c = self.connection.cursor()
+
+        c.execute('SELECT * FROM docs WHERE isnew=1')
+
+        results = c.fetchall()
+        c.close()
+        return results

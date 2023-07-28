@@ -3,3 +3,8 @@ config.ini
 /.vscode/
 /__pycache__/
 *.log
+/bin/
+/include/
+/lib/
+/lib64/
+pyvenv.cfg

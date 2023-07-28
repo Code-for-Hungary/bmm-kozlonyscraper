@@ -133,25 +133,34 @@ if (lastissuedate):
 else:
     d = datetime.datetime.now()
 
-# TODO: ha d nem az aktualis honap, akkor az aktualis honapra is kell futtatni download_data-t
-
 download_data(year = d.year, month = d.month)
+
+# ha d nem az aktualis honap, akkor az aktualis honapra is kell futtatni download_data-t
+ma = datetime.datetime.now()
+if d.year != ma.year or d.month != ma.month:
+    download_data(year = ma.year, month = ma.month)
 
 events = backend.getEvents()
 for event in events['data']:
     result = None
 
-    keresoszo = bmmtools.searchstringtofts(event['parameters'])
-    if keresoszo:
-        result = db.searchRecords(keresoszo)
+    if event['type'] == 1:
+        keresoszo = bmmtools.searchstringtofts(event['parameters'])
+        if keresoszo:
+            result = db.searchRecords(keresoszo)
+            for res in result:
+                foundIds.append(res[0])
+    else:
+        result = db.getAllNew()
         for res in result:
+            print(res[0])
             foundIds.append(res[0])
 
     if result:
         content = ''
         for res in result:
             content = content + contenttpl.render(doc = res)
-            
+
         backend.notifyEvent(event['id'], content)
 
 if config['DEFAULT']['staging'] == '0':
