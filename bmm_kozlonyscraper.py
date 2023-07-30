@@ -165,8 +165,9 @@ for event in events['data']:
         for res in result:
             content = content + contenttpl.render(doc = res)
 
-        backend.notifyEvent(event['id'], content)
-        logging.info(f"Notified: {event['id']} - {event['type']} - {event['parameters']}")
+        if config['DEFAULT']['donotnotify'] == '0':
+            backend.notifyEvent(event['id'], content)
+            logging.info(f"Notified: {event['id']} - {event['type']} - {event['parameters']}")
 
 
 if config['DEFAULT']['staging'] == '0':
