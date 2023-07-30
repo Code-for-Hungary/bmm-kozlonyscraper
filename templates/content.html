@@ -1,5 +1,9 @@
-<p>
-    <h3>{{ doc[3] }} - {{ doc[2] }}</h3>
-    <div>A közlöny megtekintéséhez <a href="{{ doc[4] }}">klikkelj ide</a>.</div>
-    <div>A közlöny letöltéséhez pedig <a href="{{ doc[5] }}">klikkelj ide</a>.</div>
-</p>
+<div class="bmm-event-data">
+    {{ doc[3] }} - {{ doc[2] }}
+</div>
+<div class="bmm-event-label">
+    A közlöny megtekintéséhez <a href="{{ doc[4] }}" class="bmm-event-data">klikkelj ide</a>.
+</div>
+<div class="bmm-event-label">
+    A közlöny letöltéséhez pedig <a href="{{ doc[5] }}" class="bmm-event-data">klikkelj ide</a>.
+</div>
