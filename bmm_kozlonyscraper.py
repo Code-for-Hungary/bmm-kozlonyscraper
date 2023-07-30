@@ -175,6 +175,6 @@ if config['DEFAULT']['staging'] == '0':
 
 db.closeConnection()
 
-logging.info('KozlonyScraper ready. Bye.')
+logging.info('KozlonyScraper ready . Bye.')
 
 print('Ready. Bye.')
