@@ -47,6 +47,9 @@ def download_data(year, month):
             if db.getDoc(dochash) is None:
                 entry['scrapedate'] = datetime.datetime.now()
                 entry['issuedate'] = journalrow.find('meta', {'itemprop': 'datePublished'})['content']
+
+                logging.info(f"New: {entry['issuedate']}")
+
                 entry['url'] = docurl
                 
                 anchors = journalrow.find_all('a')
@@ -113,6 +116,8 @@ logging.basicConfig(
     level=logging.INFO, 
     format='%(asctime)s - %(levelname)s | %(module)s.%(funcName)s line %(lineno)d: %(message)s')
 
+logging.info('KozlonyScraper started')
+
 db = Bmm_KozlonyDB(config['DEFAULT']['database_name'])
 backend = bmmbackend(config['DEFAULT']['monitor_url'], config['DEFAULT']['uuid'])
 
@@ -161,10 +166,14 @@ for event in events['data']:
             content = content + contenttpl.render(doc = res)
 
         backend.notifyEvent(event['id'], content)
+        logging.info(f"Notified: {event['id']} - {event['type']} - {event['parameters']}")
+
 
 if config['DEFAULT']['staging'] == '0':
     clearIsNew(foundIds)
 
 db.closeConnection()
+
+logging.info('KozlonyScraper ready. Bye.')
 
 print('Ready. Bye.')
