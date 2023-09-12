@@ -1,6 +1,7 @@
 import re
 
 def searchstringtofts(searchstring):
+    keresoszo = ''
     if isinstance(searchstring, str):
         keresoszo = searchstring.strip()
         keresoszo = re.sub(r'\s+', ' ', keresoszo)
