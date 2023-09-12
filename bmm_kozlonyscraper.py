@@ -101,6 +101,7 @@ def download_data(year, month):
 def clearIsNew(ids):
     
     for num in ids:
+        logging.info(f"Clear isnew: {num}")
         db.clearIsNew(num)
 
     db.commitConnection()
@@ -169,6 +170,8 @@ for event in events['data']:
             backend.notifyEvent(event['id'], content)
             logging.info(f"Notified: {event['id']} - {event['type']} - {event['parameters']}")
 
+logging.info('foundIds: ')
+logging.info(foundIds);
 
 if config['DEFAULT']['staging'] == '0':
     clearIsNew(foundIds)
