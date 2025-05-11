@@ -150,25 +150,30 @@ events = backend.getEvents()
 for event in events['data']:
     result = None
 
-    if event['type'] == 1:
-        keresoszo = bmmtools.searchstringtofts(event['parameters'])
-        if keresoszo:
-            result = db.searchRecords(keresoszo)
+    try:
+        if event['type'] == 1:
+            keresoszo = bmmtools.searchstringtofts(event['parameters'])
+            if keresoszo:
+                result = db.searchRecords(keresoszo)
+                for res in result:
+                    foundIds.append(res[0])
+        else:
+            result = db.getAllNew()
             for res in result:
                 foundIds.append(res[0])
-    else:
-        result = db.getAllNew()
-        for res in result:
-            foundIds.append(res[0])
 
-    if result:
-        content = ''
-        for res in result:
-            content = content + contenttpl.render(doc = res)
+        if result:
+            content = ''
+            for res in result:
+                content = content + contenttpl.render(doc = res)
 
-        if config['DEFAULT']['donotnotify'] == '0':
-            backend.notifyEvent(event['id'], content)
-            logging.info(f"Notified: {event['id']} - {event['type']} - {event['parameters']}")
+            if config['DEFAULT']['donotnotify'] == '0':
+                backend.notifyEvent(event['id'], content)
+                logging.info(f"Notified: {event['id']} - {event['type']} - {event['parameters']}")
+    except Exception as e:
+        logging.error(f"Error: {e}")
+        logging.error(f"Event: {event['id']} - {event['type']} - {event['parameters']}")
+
 
 logging.info('foundIds: ')
 logging.info(foundIds);
