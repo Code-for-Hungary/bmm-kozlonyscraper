@@ -1,6 +1,8 @@
 from io import BytesIO
 import datetime
 import logging
+import re
+from difflib import SequenceMatcher
 
 import requests
 import urllib3
@@ -13,6 +15,51 @@ from urllib.parse import urlparse, parse_qs
 from bmmbackend import bmmbackend
 import bmmtools
 from bmm_kozlonydb import Bmm_KozlonyDB
+
+def search(text, keyword):
+    results = []
+    matches = [m.start() for m in re.finditer(re.escape(keyword), text, re.IGNORECASE)]
+
+    words = text.split()
+
+    for match_index in matches:
+        # Convert character index to word index
+        char_count = 0
+        word_index = 0
+
+        for i, word in enumerate(words):
+            if char_count <= match_index < char_count + len(word):
+                word_index = i
+                break
+            char_count += len(word) + 1  # +1 for space
+
+        # Get surrounding 8 words before and 6 words after the match
+        before = " ".join(words[max(word_index - 10, 0) : word_index])
+        after = " ".join(words[word_index + 1 : word_index + 9])
+        found_word = words[word_index]
+        
+        match = SequenceMatcher(None, found_word.lower(), keyword.lower()).find_longest_match()
+        match_before = found_word[: match.a]
+        match_after = found_word[match.a + match.size :]
+        common_part = found_word[match.a : match.a + match.size]
+
+        # Build the context properly with correct spacing
+        before_context = before
+        if match_before:
+            before_context = before_context + " " + match_before if before_context else match_before
+        
+        after_context = match_after
+        if after:
+            after_context = after_context + " " + after if after_context else after
+    
+        results.append(
+            {
+                "before": before_context + " ",
+                "after": " " + after_context,
+                "common": common_part,
+            }
+        )
+    return results
 
 def download_data(year, month):
 
@@ -129,6 +176,7 @@ env = Environment(
     autoescape=select_autoescape()
 )
 contenttpl = env.get_template('content.html')
+contenttpl_keyword = env.get_template('content_keyword.html')
 
 if config['DEFAULT']['donotlemmatize'] == '0':
     nlp = huspacy.load()
@@ -165,7 +213,21 @@ for event in events['data']:
         if result:
             content = ''
             for res in result:
-                content = content + contenttpl.render(doc = res)
+                if event['type'] == 1 and event['parameters']:
+                    # Search for keyword matches with context
+                    search_results = search(res[6], event['parameters'])  # res[6] is content
+                    if not search_results and config['DEFAULT']['donotlemmatize'] == '0':
+                        # Try lemmatized search if no direct matches
+                        search_results = search(res[7], event['parameters'])  # res[7] is lemmacontent
+                        for sr in search_results:
+                            sr['before'] = "szótövezett találat: " + sr['before']
+                    
+                    if search_results:
+                        # Create enhanced result with search context
+                        enhanced_res = list(res) + [search_results[:5], len(search_results), event['parameters']]
+                        content = content + contenttpl_keyword.render(doc = enhanced_res)
+                else:
+                    content = content + contenttpl.render(doc = res)
 
             if config['DEFAULT']['donotnotify'] == '0':
                 backend.notifyEvent(event['id'], content)
