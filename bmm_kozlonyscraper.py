@@ -17,6 +17,7 @@ import bmmtools
 from bmm_kozlonydb import Bmm_KozlonyDB
 
 def search(text, keyword):
+    keyword = keyword.replace('*', '').replace('"', '')
     results = []
     matches = [m.start() for m in re.finditer(re.escape(keyword), text, re.IGNORECASE)]
 
