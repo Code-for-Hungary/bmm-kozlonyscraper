@@ -6,6 +6,7 @@ logfile_name = app.log
 donotlemmatize = 0
 donotnotify = 0
 staging = 0
+eventgenerator_api_key = 
 
 [Download]
 url = https://magyarkozlony.hu/

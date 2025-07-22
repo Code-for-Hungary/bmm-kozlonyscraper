@@ -164,6 +164,7 @@ logging.basicConfig(
     filename=config['DEFAULT']['logfile_name'], 
     level=logging.INFO, 
     format='%(asctime)s - %(levelname)s | %(module)s.%(funcName)s line %(lineno)d: %(message)s')
+eventgenerator_api_key = config['DEFAULT']['eventgenerator_api_key']
 
 logging.info('KozlonyScraper started')
 
@@ -195,7 +196,7 @@ ma = datetime.datetime.now()
 if d.year != ma.year or d.month != ma.month:
     download_data(year = ma.year, month = ma.month)
 
-events = backend.getEvents()
+events = backend.getEvents(eventgenerator_api_key)
 for event in events['data']:
     result = None
 
@@ -231,7 +232,7 @@ for event in events['data']:
                     content = content + contenttpl.render(doc = res)
 
             if config['DEFAULT']['donotnotify'] == '0':
-                backend.notifyEvent(event['id'], content)
+                backend.notifyEvent(event['id'], content, eventgenerator_api_key)
                 logging.info(f"Notified: {event['id']} - {event['type']} - {event['parameters']}")
     except Exception as e:
         logging.error(f"Error: {e}")
