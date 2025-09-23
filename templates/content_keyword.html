@@ -1,29 +1,29 @@
 <br>
 
 <div class="bmm-event-label">
-    <b>Dokumentum címe</b>: <span class="bmm-event-data">{{ doc[3] }}</span>
+    <b>Dokumentum címe</b>: <span class="bmm-event-data">{{ doc["title"] }}</span>
 </div>
 
 <div class="bmm-event-label">
-    <b>Publikálás dátuma</b>: <span class="bmm-event-data">{{ doc[2] }}</span>
+    <b>Publikálás dátuma</b>: <span class="bmm-event-data">{{ doc["issuedate"] }}</span>
 </div>
 
 <div class="bmm-event-label">
-    <b>Megnyitás</b>: <a href="{{ doc[4] }}" class="bmm-event-data">Kattints ide!</a>.
+    <b>Megnyitás</b>: <a href="{{ doc["url"] }}" class="bmm-event-data">Kattints ide!</a>.
 </div>
 
 <div class="bmm-event-label">
-    <b>Letöltés</b>: <a href="{{ doc[5] }}" class="bmm-event-data">Kattints ide!</a>.
+    <b>Letöltés</b>: <a href="{{ doc["pdfurl"] }}" class="bmm-event-data">Kattints ide!</a>.
 </div>
 
 <div class="bmm-event-label">
-    <b>Egyezések száma</b>: {{ doc[10] }}
+    <b>Egyezések száma</b>: {{ doc["result_count"] }}
 </div>
 
 <div class="bmm-event-label">
     <b>Első egyezések</b>:
     <ul>
-    {% for result in doc[9] %}
+    {% for result in doc["results"] %}
         <li>"{{ result["before"] }}<b>{{ result["common"] }}</b>{{ result["after"] }}"</li>
     {% endfor %}
     </ul>

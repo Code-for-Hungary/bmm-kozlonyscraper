@@ -16,7 +16,10 @@ from bmmbackend import bmmbackend
 import bmmtools
 from bmm_kozlonydb import Bmm_KozlonyDB
 
-def search(text, keyword):
+def search(entry, keyword, do_lemmatize=False):
+    if keyword == "munkaügyi":
+        pass
+    text = entry["content"] if not do_lemmatize else entry["lemmacontent"]
     keyword = keyword.replace('*', '').replace('"', '')
     results = []
     matches = [m.start() for m in re.finditer(re.escape(keyword), text, re.IGNORECASE)]
@@ -52,20 +55,33 @@ def search(text, keyword):
         after_context = match_after
         if after:
             after_context = after_context + " " + after if after_context else after
-    
+
+        lemma_warn = ''
+        if do_lemmatize:
+            lemma_warn = "szótövezett találat: "
+
         results.append(
             {
-                "before": before_context + " ",
+                "before": lemma_warn+before_context + " ",
                 "after": " " + after_context,
                 "common": common_part,
             }
         )
     return results
 
+def find_matching_multiple(keywords, entry):
+    all_results = []
+    for keyword in keywords:
+        keyword_results = search(entry, keyword)
+        if not keyword_results and config['DEFAULT']['donotlemmatize'] == '0':
+            keyword_results = search(entry, keyword, do_lemmatize=True)
+        all_results += keyword_results
+    return all_results
+
 def download_data(year, month):
 
     url = config['Download']['url']
-    
+    entries = []
     pagenum = 0
     pagecount = 0
 
@@ -132,6 +148,7 @@ def download_data(year, month):
 
                     db.saveDoc(dochash, entry)
                     db.commitConnection()
+                    entries.append((dochash, entry.copy()))
 
 
         # getting page count
@@ -144,6 +161,8 @@ def download_data(year, month):
 
         if pagenum >= pagecount:
             break
+    
+    return entries
 
 
 def clearIsNew(ids):
@@ -171,8 +190,6 @@ logging.info('KozlonyScraper started')
 db = Bmm_KozlonyDB(config['DEFAULT']['database_name'])
 backend = bmmbackend(config['DEFAULT']['monitor_url'], config['DEFAULT']['uuid'])
 
-foundIds = []
-
 env = Environment(
     loader=FileSystemLoader('templates'),
     autoescape=select_autoescape()
@@ -189,61 +206,39 @@ if (lastissuedate):
 else:
     d = datetime.datetime.now()
 
-download_data(year = d.year, month = d.month)
+new_entries = download_data(year = d.year, month = d.month)
 
 # ha d nem az aktualis honap, akkor az aktualis honapra is kell futtatni download_data-t
 ma = datetime.datetime.now()
 if d.year != ma.year or d.month != ma.month:
-    download_data(year = ma.year, month = ma.month)
+    new_entries += download_data(year = ma.year, month = ma.month)
 
 events = backend.getEvents(eventgenerator_api_key)
 for event in events['data']:
     result = None
 
     try:
+        content = ''
         if event['type'] == 1:
-            keresoszo = bmmtools.searchstringtofts(event['parameters'])
-            if keresoszo:
-                result = db.searchRecords(keresoszo)
-                for res in result:
-                    foundIds.append(res[0])
+            for hash, entry in new_entries:
+                print(entry["title"])
+                search_results = find_matching_multiple(event['parameters'].split(","), entry)
+                result_entry = entry.copy()
+                result_entry["result_count"] = len(search_results)
+                result_entry["results"] = search_results[:5]
+                if result_entry["results"]:
+                    content += contenttpl_keyword.render(doc = result_entry)
         else:
-            result = db.getAllNew()
-            for res in result:
-                foundIds.append(res[0])
+            for hash, entry in new_entries:
+                content = content + contenttpl.render(doc = entry)
 
-        if result:
-            content = ''
-            for res in result:
-                if event['type'] == 1 and event['parameters']:
-                    # Search for keyword matches with context
-                    search_results = search(res[6], event['parameters'])  # res[6] is content
-                    if not search_results and config['DEFAULT']['donotlemmatize'] == '0':
-                        # Try lemmatized search if no direct matches
-                        search_results = search(res[7], event['parameters'])  # res[7] is lemmacontent
-                        for sr in search_results:
-                            sr['before'] = "szótövezett találat: " + sr['before']
-                    
-                    if search_results:
-                        # Create enhanced result with search context
-                        enhanced_res = list(res) + [search_results[:5], len(search_results), event['parameters']]
-                        content = content + contenttpl_keyword.render(doc = enhanced_res)
-                else:
-                    content = content + contenttpl.render(doc = res)
-
-            if config['DEFAULT']['donotnotify'] == '0':
-                backend.notifyEvent(event['id'], content, eventgenerator_api_key)
-                logging.info(f"Notified: {event['id']} - {event['type']} - {event['parameters']}")
+        if content and config['DEFAULT']['donotnotify'] == '0':
+            backend.notifyEvent(event['id'], content, eventgenerator_api_key)
+            logging.info(f"Notified: {event['id']} - {event['type']} - {event['parameters']}")
     except Exception as e:
         logging.error(f"Error: {e}")
         logging.error(f"Event: {event['id']} - {event['type']} - {event['parameters']}")
 
-
-logging.info('foundIds: ')
-logging.info(foundIds);
-
-if config['DEFAULT']['staging'] == '0':
-    clearIsNew(foundIds)
 
 db.closeConnection()
 
