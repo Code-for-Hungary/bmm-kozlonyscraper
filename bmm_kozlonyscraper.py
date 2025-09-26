@@ -17,8 +17,6 @@ import bmmtools
 from bmm_kozlonydb import Bmm_KozlonyDB
 
 def search(entry, keyword, do_lemmatize=False):
-    if keyword == "munkaügyi":
-        pass
     text = entry["content"] if not do_lemmatize else entry["lemmacontent"]
     keyword = keyword.replace('*', '').replace('"', '')
     results = []
