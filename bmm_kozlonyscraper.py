@@ -16,52 +16,51 @@ from bmmbackend import bmmbackend
 import bmmtools
 from bmm_kozlonydb import Bmm_KozlonyDB
 
-def search(entry, keyword, do_lemmatize=False):
-    text = entry["content"] if not do_lemmatize else entry["lemmacontent"]
+def search(text, keyword, nlp_warn=False):
     keyword = keyword.replace('*', '').replace('"', '')
     results = []
     matches = [m.start() for m in re.finditer(re.escape(keyword), text, re.IGNORECASE)]
-
-    words = text.split()
+    
+    # Build a list of (word, start_position, end_position) tuples
+    word_positions = []
+    for match in re.finditer(r'\S+', text):
+        word_positions.append((match.group(), match.start(), match.end()))
 
     for match_index in matches:
-        # Convert character index to word index
-        char_count = 0
+        # Find which word contains this character position
         word_index = 0
-
-        for i, word in enumerate(words):
-            if char_count <= match_index < char_count + len(word):
+        for i, (word, start_pos, end_pos) in enumerate(word_positions):
+            if start_pos <= match_index < end_pos:
                 word_index = i
                 break
-            char_count += len(word) + 1  # +1 for space
 
-        # Get surrounding 8 words before and 6 words after the match
-        before = " ".join(words[max(word_index - 10, 0) : word_index])
-        after = " ".join(words[word_index + 1 : word_index + 9])
+        # Get surrounding 10 words before and after the match
+        words = [w[0] for w in word_positions]  # Extract just the words
+        before = " ".join(words[max(word_index - 16, 0) : word_index])
+        after = " ".join(words[word_index + 1 : word_index + 17])
         found_word = words[word_index]
-        
-        match = SequenceMatcher(None, found_word.lower(), keyword.lower()).find_longest_match()
+        match = SequenceMatcher(
+            None, found_word, keyword
+        ).find_longest_match()
         match_before = found_word[: match.a]
+        if match_before != "":
+            before = before + " " + match_before
+        else:
+            before = before + " "
         match_after = found_word[match.a + match.size :]
+        if match_after != "":
+            after = match_after + " " + after
+        else:
+            after = " " + after
         common_part = found_word[match.a : match.a + match.size]
 
-        # Build the context properly with correct spacing
-        before_context = before
-        if match_before:
-            before_context = before_context + " " + match_before if before_context else match_before
-        
-        after_context = match_after
-        if after:
-            after_context = after_context + " " + after if after_context else after
-
-        lemma_warn = ''
-        if do_lemmatize:
-            lemma_warn = "szótövezett találat: "
+        if nlp_warn:
+            before = "szótövezett találat: " + before
 
         results.append(
             {
-                "before": lemma_warn+before_context + " ",
-                "after": " " + after_context,
+                "before": before,
+                "after": after,
                 "common": common_part,
             }
         )
@@ -70,9 +69,10 @@ def search(entry, keyword, do_lemmatize=False):
 def find_matching_multiple(keywords, entry):
     all_results = []
     for keyword in keywords:
-        keyword_results = search(entry, keyword)
-        if not keyword_results and config['DEFAULT']['donotlemmatize'] == '0':
-            keyword_results = search(entry, keyword, do_lemmatize=True)
+        keyword_results = search(entry["content"], keyword)
+        do_lemmatize = config['DEFAULT'].get('donotlemmatize', '0') == '0'
+        if not keyword_results and do_lemmatize:
+            keyword_results = search(entry["lemmacontent"], keyword, nlp_warn=True)
         all_results += keyword_results
     return all_results
 
