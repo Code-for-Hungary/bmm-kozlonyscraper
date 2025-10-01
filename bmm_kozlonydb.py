@@ -91,9 +91,10 @@ class Bmm_KozlonyDB:
 
     def getAllNew(self):
         c = self.connection.cursor()
+        c.row_factory = sqlite3.Row
 
         c.execute('SELECT * FROM docs WHERE isnew=1')
 
-        results = c.fetchall()
+        results = [dict(row) for row in c.fetchall()]
         c.close()
         return results

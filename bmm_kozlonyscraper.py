@@ -101,6 +101,8 @@ def download_data(year, month):
         journalrows = soupage.find_all('div', class_ = 'journal-row')
         for journalrow in journalrows:
 
+            if journalrow.text.find('Nincs megjeleníthető tartalom.') >= 0:
+                continue
             docurl = journalrow.find('meta', {'itemprop': 'url'})['content']
 
             logging.info(docurl)
@@ -204,21 +206,24 @@ if (lastissuedate):
 else:
     d = datetime.datetime.now()
 
-new_entries = download_data(year = d.year, month = d.month)
+download_data(year = d.year, month = d.month)
 
 # ha d nem az aktualis honap, akkor az aktualis honapra is kell futtatni download_data-t
 ma = datetime.datetime.now()
 if d.year != ma.year or d.month != ma.month:
-    new_entries += download_data(year = ma.year, month = ma.month)
+    download_data(year = ma.year, month = ma.month)
+
+new_entries = db.getAllNew()
 
 events = backend.getEvents(eventgenerator_api_key)
 for event in events['data']:
     result = None
 
     try:
+        new_ids = []
         content = ''
         if event['type'] == 1:
-            for hash, entry in new_entries:
+            for entry in new_entries:
                 print(entry["title"])
                 search_results = find_matching_multiple(event['parameters'].split(","), entry)
                 result_entry = entry.copy()
@@ -226,13 +231,16 @@ for event in events['data']:
                 result_entry["results"] = search_results[:5]
                 if result_entry["results"]:
                     content += contenttpl_keyword.render(doc = result_entry)
+                new_ids.append(entry['dochash'])
         else:
-            for hash, entry in new_entries:
+            for entry in new_entries:
                 content = content + contenttpl.render(doc = entry)
+                new_ids.append(entry['dochash'])
 
         if content and config['DEFAULT']['donotnotify'] == '0':
             backend.notifyEvent(event['id'], content, eventgenerator_api_key)
             logging.info(f"Notified: {event['id']} - {event['type']} - {event['parameters']}")
+        clearIsNew(new_ids)
     except Exception as e:
         logging.error(f"Error: {e}")
         logging.error(f"Event: {event['id']} - {event['type']} - {event['parameters']}")
